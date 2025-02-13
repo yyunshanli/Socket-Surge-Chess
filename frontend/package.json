@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "react": "^19.0.0",
+    "react-chessboard": "^4.7.2",
+    "react-chessground": "^1.5.0",
     "react-dom": "^19.0.0",
     "socket.io-client": "^4.8.1"
   },

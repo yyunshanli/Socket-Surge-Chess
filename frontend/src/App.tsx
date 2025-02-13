@@ -1,12 +1,15 @@
-import { Chessboard } from "react-chessboard";
+
+import RenderChessboard from './components/chessboard';
 import './App.css'
 
 function App() {
 
   return (
+    <div>
       <div style={{ width: "500px", height: "500px", margin: "auto"}}>
-        <Chessboard id="defaultBoard"/>
+        <RenderChessboard/>
       </div>
+    </div>
   );
 }
 

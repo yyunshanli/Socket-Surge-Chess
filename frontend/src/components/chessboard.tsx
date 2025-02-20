@@ -14,11 +14,23 @@ function RenderChessboard() {
           to: targetSquare,
           promotion: "q", // Always promote to a queen for simplicity
         });
+
+        if (move) {
+            if (move.captured) {
+              console.log(`${piece} captured: ${move.captured}`); // Logs the captured piece type (e.g., 'p' for pawn)
+            }
+        }
+
+        if (gameCopy.isCheckmate()) {
+          console.log("Checkmate! Game over."); // Logs checkmate state
+          // You could display a message or trigger a game reset here
+        }
     
         if (move) {
           setGame(gameCopy);
           return true;
         }
+        
 
         return false;
     }

@@ -1,14 +1,33 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="/src/styles.css" rel="stylesheet">
-    <title>Vite + React + TS</title>
+    <title>Chess with WebSockets</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.1/chess.min.js"></script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <h1>Chess Game</h1>
+    <div id="board"></div>
+    <p id="status"></p>
+
+    <script>
+      const socket = io();
+      const chess = new Chess();
+
+      socket.on("board", (fen) => {
+        chess.load(fen);
+        document.getElementById("status").innerText = fen;
+      });
+
+      socket.on("error", (message) => {
+        alert(message);
+      });
+
+      function makeMove(from, to) {
+        socket.emit("move", { from, to });
+      }
+    </script>
   </body>
 </html>

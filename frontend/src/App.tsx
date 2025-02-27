@@ -21,7 +21,7 @@ function App() {
         <Routes>
           <Route path='/' element={<NavBar navItems={NavbarItems}/>}>
           <Route index element={
-                  <div style={{ width: "500px", height: "500px", margin: "auto"}}>
+                  <div style={{ width: "33%", height: "33%", margin: "auto"}}>
                   <RenderChessboard/>
                 </div>
           }/>

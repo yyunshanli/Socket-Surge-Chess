@@ -12,12 +12,11 @@ function RenderChessboard() {
         const move = gameCopy.move({
           from: sourceSquare,
           to: targetSquare,
-          promotion: "q", // Always promote to a queen for simplicity
         });
 
         if (move) {
             if (move.captured) {
-              console.log(`${piece} captured: ${move.captured}`); // Logs the captured piece type (e.g., 'p' for pawn)
+              console.log(`${piece} captured: ${move.captured}`);
             }
         }
 
@@ -36,7 +35,7 @@ function RenderChessboard() {
     }
 
     return (
-        <div>
+        <div className="p-5 m-10">
             <Chessboard id="defaultBoard" position={game.fen()} onPieceDrop={onDrop}/>
         </div>
         );

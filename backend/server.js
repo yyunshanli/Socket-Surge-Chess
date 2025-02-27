@@ -13,6 +13,7 @@ let chess = new Chess();
 
 io.on("connection", (socket) => {
   console.log("A player connected:", socket.id);
+  rve;
 
   // inital board
   socket.emit("board", chess.fen());

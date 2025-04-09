@@ -1,44 +1,75 @@
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:3000", {
+  transports: ["websocket"],
+});
 
 function RenderChessboard() {
+  const [game, setGame] = useState(new Chess());
+  const [color, setColor] = useState<"white" | "black">("white");
+  const [roomId, setRoomId] = useState<string | null>(null);
 
-    const [game, setGame] = useState(new Chess());
+  useEffect(() => {
+    console.log("[Client] Finding game...");
+    socket.emit("findGame");
 
-    const onDrop = (sourceSquare: string, targetSquare: string, piece: string): boolean => {
-        const gameCopy = new Chess(game.fen());
+    socket.on("connect", () => {
+      console.log("[Client] Connected to backend:", socket.id);
+    });
 
-        const move = gameCopy.move({
-          from: sourceSquare,
-          to: targetSquare,
-        });
+    socket.on("start", ({ color, roomId, fen }) => {
+      console.log(`[Client] Game started as ${color} in room ${roomId}`);
+      setColor(color);
+      setRoomId(roomId);
+      setGame(new Chess(fen));
+    });
 
-        if (move) {
-            if (move.captured) {
-              console.log(`${piece} captured: ${move.captured}`);
-            }
-        }
+    socket.on("board", (fen) => {
+      console.log("[Client] Board updated:", fen);
+      setGame(new Chess(fen));
+    });
 
-        if (gameCopy.isCheckmate()) {
-          console.log("Checkmate! Game over."); // Logs checkmate state
-          // You could display a message or trigger a game reset here
-        }
-    
-        if (move) {
-          setGame(gameCopy);
-          return true;
-        }
-        
+    socket.on("error", (msg) => {
+      console.error("[Client Error]", msg);
+      alert(msg);
+    });
 
-        return false;
-    }
+    return () => {
+      socket.off("start");
+      socket.off("board");
+      socket.off("error");
+    };
+  }, []);
 
-    return (
-        <div className="p-5 m-10">
-            <Chessboard id="defaultBoard" position={game.fen()} onPieceDrop={onDrop}/>
-        </div>
-        );
+  const onDrop = (
+    sourceSquare: string,
+    targetSquare: string,
+    piece: string
+  ): boolean => {
+    if (!roomId) return false;
+
+    // Send move to server
+    socket.emit("move", {
+      roomId,
+      move: { from: sourceSquare, to: targetSquare },
+    });
+
+    return true; // Let server confirm the move
+  };
+
+  return (
+    <div className="p-5 m-10">
+      <Chessboard
+        id="defaultBoard"
+        position={game.fen()}
+        onPieceDrop={onDrop}
+        boardOrientation={color} // Rotate board based on assigned color
+      />
+    </div>
+  );
 }
 
 export default RenderChessboard;

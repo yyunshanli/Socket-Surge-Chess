@@ -4,30 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chess with WebSockets</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.1/chess.min.js"></script>
   </head>
   <body>
-    <h1>Chess Game</h1>
-    <div id="board"></div>
-    <p id="status"></p>
+    <div id="root"></div>
 
-    <script>
-      const socket = io();
-      const chess = new Chess();
-
-      socket.on("board", (fen) => {
-        chess.load(fen);
-        document.getElementById("status").innerText = fen;
-      });
-
-      socket.on("error", (message) => {
-        alert(message);
-      });
-
-      function makeMove(from, to) {
-        socket.emit("move", { from, to });
-      }
-    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

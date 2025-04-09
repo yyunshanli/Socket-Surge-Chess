@@ -28,38 +28,41 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const opponent = waitingPlayers.find((s) => s.id !== socket.id);
+    const opponentSocket = waitingPlayers.find((s) => s.id !== socket.id);
 
-    if (opponent) {
-      const index = waitingPlayers.indexOf(opponent);
+    if (opponentSocket) {
+      // Remove opponent from waiting queue
+      const index = waitingPlayers.indexOf(opponentSocket);
       if (index !== -1) waitingPlayers.splice(index, 1);
 
-      const roomId = `${opponent.id}-${socket.id}`;
+      const roomId = `${opponentSocket.id}-${socket.id}`;
       const chess = new Chess();
 
       games[roomId] = {
         game: chess,
         players: {
-          white: opponent.id,
+          white: opponentSocket.id,
           black: socket.id,
         },
       };
 
       playerToRoomMap[socket.id] = roomId;
-      playerToRoomMap[opponent.id] = roomId;
+      playerToRoomMap[opponentSocket.id] = roomId;
 
-      opponent.join(roomId);
+      // Join room
       socket.join(roomId);
+      opponentSocket.join(roomId);
 
       console.log(`[MATCH] Room created: ${roomId}`);
-      console.log(`    - White: ${opponent.id}`);
+      console.log(`    - White: ${opponentSocket.id}`);
       console.log(`    - Black: ${socket.id}`);
 
-      io.to(opponent.id).emit("start", {
+      io.to(opponentSocket.id).emit("start", {
         color: "white",
         roomId,
         fen: chess.fen(),
       });
+
       io.to(socket.id).emit("start", {
         color: "black",
         roomId,
@@ -84,11 +87,22 @@ io.on("connection", (socket) => {
     }
 
     const chess = gameData.game;
+
     try {
       const result = chess.move(move);
       if (result) {
+        const fen = chess.fen();
+        const history = chess.history({ verbose: true });
+
         console.log(`[VALID MOVE] ${move.from} -> ${move.to}`);
-        io.to(roomId).emit("board", chess.fen());
+        console.log(
+          `[SERVER] Emitting updated board + history to room ${roomId}`
+        );
+
+        io.to(roomId).emit("board", {
+          fen,
+          history,
+        });
       } else {
         console.log(`[INVALID MOVE] ${move.from} -> ${move.to}`);
         socket.emit("error", "Invalid move");
@@ -108,8 +122,8 @@ io.on("connection", (socket) => {
       console.log(`[CLEANUP] Removed ${socket.id} from waiting queue`);
     }
 
-    if (playerToRoomMap[socket.id]) {
-      const roomId = playerToRoomMap[socket.id];
+    const roomId = playerToRoomMap[socket.id];
+    if (roomId) {
       delete playerToRoomMap[socket.id];
       console.log(
         `[CLEANUP] Removed ${socket.id} from game room map (${roomId})`

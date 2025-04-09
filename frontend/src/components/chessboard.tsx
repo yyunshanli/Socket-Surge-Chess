@@ -11,10 +11,11 @@ function RenderChessboard() {
   const [game, setGame] = useState(new Chess());
   const [color, setColor] = useState<"white" | "black">("white");
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [moveLog, setMoveLog] = useState<string[]>([]);
+  const [moveLog, setMoveLog] = useState<{ white: string; black?: string }[]>(
+    []
+  );
 
   useEffect(() => {
-    console.log("[Client] Finding game...");
     socket.emit("findGame");
 
     socket.on("connect", () => {
@@ -26,14 +27,36 @@ function RenderChessboard() {
       setColor(color);
       setRoomId(roomId);
 
-      const freshGame = new Chess(fen);
-      setGame(freshGame);
+      const newGame = new Chess();
+      newGame.load(fen);
+      setGame(newGame);
       setMoveLog([]);
     });
 
-    socket.on("board", (fen) => {
-      const newGame = new Chess(fen);
-      setGame(newGame);
+    socket.on("board", ({ fen, history }) => {
+      console.log("[SOCKET] Received board update:", { fen, history });
+
+      setGame((prevGame) => {
+        const updated = new Chess();
+        try {
+          updated.load(fen);
+        } catch (e) {
+          console.error("[CLIENT] Failed to load FEN:", fen, e);
+          return prevGame;
+        }
+
+        const formattedLog: { white: string; black?: string }[] = [];
+
+        for (let i = 0; i < history.length; i += 2) {
+          formattedLog.push({
+            white: history[i]?.san,
+            black: history[i + 1]?.san,
+          });
+        }
+
+        setMoveLog(formattedLog);
+        return updated;
+      });
     });
 
     socket.on("error", (msg) => {
@@ -59,7 +82,6 @@ function RenderChessboard() {
     const isPlayerWhite = color === "white";
 
     if ((isWhitesTurn && !isPlayerWhite) || (!isWhitesTurn && isPlayerWhite)) {
-      console.log("[Client] Not your turn.");
       return false;
     }
 
@@ -69,7 +91,6 @@ function RenderChessboard() {
       (isPlayerWhite && pieceAtSource.color !== "w") ||
       (!isPlayerWhite && pieceAtSource.color !== "b")
     ) {
-      console.log("[Client] You can only move your own pieces.");
       return false;
     }
 
@@ -86,7 +107,6 @@ function RenderChessboard() {
       move: { from: sourceSquare, to: targetSquare },
     });
 
-    setMoveLog((prev) => [...prev, move.san]);
     return true;
   };
 
@@ -120,6 +140,7 @@ function RenderChessboard() {
           </h2>
 
           <div className="flex flex-row gap-8 items-start justify-center">
+            {/* Board */}
             <div
               style={{ width: "56%", height: "57%", margin: "auto" }}
               className="border rounded shadow-lg"
@@ -132,11 +153,19 @@ function RenderChessboard() {
               />
             </div>
 
+            {/* Move Log */}
             <div className="bg-base-100 border rounded p-4 w-40 max-h-[400px] overflow-y-auto text-sm shadow">
               <h3 className="font-semibold mb-2">Move Log</h3>
               <ol className="list-decimal list-inside space-y-1">
-                {moveLog.map((move, index) => (
-                  <li key={index}>{move}</li>
+                {moveLog.map((entry, index) => (
+                  <li key={index}>
+                    {entry.white}
+                    {entry.black ? (
+                      <span className="ml-3">{entry.black}</span>
+                    ) : (
+                      ""
+                    )}
+                  </li>
                 ))}
               </ol>
             </div>

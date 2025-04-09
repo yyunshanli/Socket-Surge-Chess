@@ -111,7 +111,7 @@ function RenderChessboard() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center mt-10">
+    <div className="flex flex-col items-center w-full min-h-screen px-4 py-6">
       {!roomId ? (
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-4">
@@ -126,7 +126,7 @@ function RenderChessboard() {
         </div>
       ) : (
         <>
-          <h2 className="text-lg font-medium mb-4">
+          <h2 className="text-xl font-semibold mb-6 text-center">
             You are playing as{" "}
             <span
               className={
@@ -139,35 +139,41 @@ function RenderChessboard() {
             </span>
           </h2>
 
-          <div className="flex flex-row gap-8 items-start justify-center">
+          <div className="flex flex-col lg:flex-row items-start justify-start gap-8 w-full px-4">
             {/* Board */}
-            <div
-              style={{ width: "56%", height: "57%", margin: "auto" }}
-              className="border rounded shadow-lg"
-            >
+            <div className="flex justify-center w-full lg:w-[700px]">
               <Chessboard
                 id="defaultBoard"
                 position={game.fen()}
                 onPieceDrop={onDrop}
                 boardOrientation={color}
+                boardWidth={640}
               />
             </div>
 
             {/* Move Log */}
-            <div className="bg-base-100 border rounded p-4 w-40 max-h-[400px] overflow-y-auto text-sm shadow">
-              <h3 className="font-semibold mb-2">Move Log</h3>
-              <ol className="list-decimal list-inside space-y-1">
-                {moveLog.map((entry, index) => (
-                  <li key={index}>
-                    {entry.white}
-                    {entry.black ? (
-                      <span className="ml-3">{entry.black}</span>
-                    ) : (
-                      ""
-                    )}
-                  </li>
-                ))}
-              </ol>
+            <div className="bg-base-100 border rounded p-5 w-full lg:w-[400px] text-sm shadow">
+              <h3 className="font-semibold mb-3 text-center text-lg">
+                Move Log
+              </h3>
+              <table className="w-full text-left table-fixed">
+                <thead>
+                  <tr className="text-gray-500 text-xs border-b border-gray-700">
+                    <th className="w-[30px] pr-2">#</th>
+                    <th className="w-[150px] pr-2 truncate">White</th>
+                    <th className="w-[150px] truncate">Black</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {moveLog.map((entry, index) => (
+                    <tr key={index}>
+                      <td className="pr-2">{index + 1}.</td>
+                      <td className="pr-2 truncate">{entry.white}</td>
+                      <td className="truncate">{entry.black || ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </>

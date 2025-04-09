@@ -51,13 +51,33 @@ function RenderChessboard() {
   ): boolean => {
     if (!roomId) return false;
 
-    // Send move to server
+    // Only allow moving your own pieces
+    const isWhitesTurn = game.turn() === "w";
+    const isPlayerWhite = color === "white";
+
+    if ((isWhitesTurn && !isPlayerWhite) || (!isWhitesTurn && isPlayerWhite)) {
+      console.log("[Client] Not your turn.");
+      return false;
+    }
+
+    // Check that the piece belongs to you
+    const pieceAtSource = game.get(sourceSquare);
+    if (
+      !pieceAtSource ||
+      (isPlayerWhite && pieceAtSource.color !== "w") ||
+      (!isPlayerWhite && pieceAtSource.color !== "b")
+    ) {
+      console.log("[Client] You can only move your own pieces.");
+      return false;
+    }
+
+    // Valid so far — emit move to server
     socket.emit("move", {
       roomId,
       move: { from: sourceSquare, to: targetSquare },
     });
 
-    return true; // Let server confirm the move
+    return true;
   };
 
   return (

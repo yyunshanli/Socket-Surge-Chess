@@ -11,6 +11,7 @@ app.use(express.static("../frontend"));
 
 const waitingPlayers = [];
 const games = {}; // roomId => { game, players: { white, black } }
+const playerToRoomMap = {};
 
 io.on("connection", (socket) => {
   console.log(`[+] Player connected: ${socket.id}`);
@@ -18,10 +19,18 @@ io.on("connection", (socket) => {
   socket.on("findGame", () => {
     console.log(`[MATCHMAKING] ${socket.id} is looking for a game`);
 
+    if (playerToRoomMap[socket.id]) {
+      console.log(
+        `[IGNORED] ${socket.id} is already in a game (${
+          playerToRoomMap[socket.id]
+        })`
+      );
+      return;
+    }
+
     const opponent = waitingPlayers.find((s) => s.id !== socket.id);
 
     if (opponent) {
-      // Remove opponent from queue
       const index = waitingPlayers.indexOf(opponent);
       if (index !== -1) waitingPlayers.splice(index, 1);
 
@@ -35,6 +44,9 @@ io.on("connection", (socket) => {
           black: socket.id,
         },
       };
+
+      playerToRoomMap[socket.id] = roomId;
+      playerToRoomMap[opponent.id] = roomId;
 
       opponent.join(roomId);
       socket.join(roomId);
@@ -54,7 +66,6 @@ io.on("connection", (socket) => {
         fen: chess.fen(),
       });
     } else {
-      // Only push if not already in waitingPlayers
       if (!waitingPlayers.find((s) => s.id === socket.id)) {
         waitingPlayers.push(socket);
         console.log(`[WAITING] No opponents. ${socket.id} is now waiting.`);
@@ -91,11 +102,18 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log(`[-] Player disconnected: ${socket.id}`);
 
-    // Remove from waiting list if present
     const index = waitingPlayers.findIndex((s) => s.id === socket.id);
     if (index !== -1) {
       waitingPlayers.splice(index, 1);
       console.log(`[CLEANUP] Removed ${socket.id} from waiting queue`);
+    }
+
+    if (playerToRoomMap[socket.id]) {
+      const roomId = playerToRoomMap[socket.id];
+      delete playerToRoomMap[socket.id];
+      console.log(
+        `[CLEANUP] Removed ${socket.id} from game room map (${roomId})`
+      );
     }
   });
 });

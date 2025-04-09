@@ -11,6 +11,7 @@ function RenderChessboard() {
   const [game, setGame] = useState(new Chess());
   const [color, setColor] = useState<"white" | "black">("white");
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [moveLog, setMoveLog] = useState<string[]>([]);
 
   useEffect(() => {
     console.log("[Client] Finding game...");
@@ -24,12 +25,15 @@ function RenderChessboard() {
       console.log(`[Client] Game started as ${color} in room ${roomId}`);
       setColor(color);
       setRoomId(roomId);
-      setGame(new Chess(fen));
+
+      const freshGame = new Chess(fen);
+      setGame(freshGame);
+      setMoveLog([]);
     });
 
     socket.on("board", (fen) => {
-      console.log("[Client] Board updated:", fen);
-      setGame(new Chess(fen));
+      const newGame = new Chess(fen);
+      setGame(newGame);
     });
 
     socket.on("error", (msg) => {
@@ -51,7 +55,6 @@ function RenderChessboard() {
   ): boolean => {
     if (!roomId) return false;
 
-    // Only allow moving your own pieces
     const isWhitesTurn = game.turn() === "w";
     const isPlayerWhite = color === "white";
 
@@ -60,7 +63,6 @@ function RenderChessboard() {
       return false;
     }
 
-    // Check that the piece belongs to you
     const pieceAtSource = game.get(sourceSquare);
     if (
       !pieceAtSource ||
@@ -71,12 +73,20 @@ function RenderChessboard() {
       return false;
     }
 
-    // Valid so far — emit move to server
+    const tempGame = new Chess(game.fen());
+    const move = tempGame.move({
+      from: sourceSquare,
+      to: targetSquare,
+    });
+
+    if (!move) return false;
+
     socket.emit("move", {
       roomId,
       move: { from: sourceSquare, to: targetSquare },
     });
 
+    setMoveLog((prev) => [...prev, move.san]);
     return true;
   };
 
@@ -109,16 +119,27 @@ function RenderChessboard() {
             </span>
           </h2>
 
-          <div
-            style={{ width: "56%", height: "57%", margin: "auto" }}
-            className="border rounded shadow-lg"
-          >
-            <Chessboard
-              id="defaultBoard"
-              position={game.fen()}
-              onPieceDrop={onDrop}
-              boardOrientation={color}
-            />
+          <div className="flex flex-row gap-8 items-start justify-center">
+            <div
+              style={{ width: "56%", height: "57%", margin: "auto" }}
+              className="border rounded shadow-lg"
+            >
+              <Chessboard
+                id="defaultBoard"
+                position={game.fen()}
+                onPieceDrop={onDrop}
+                boardOrientation={color}
+              />
+            </div>
+
+            <div className="bg-base-100 border rounded p-4 w-40 max-h-[400px] overflow-y-auto text-sm shadow">
+              <h3 className="font-semibold mb-2">Move Log</h3>
+              <ol className="list-decimal list-inside space-y-1">
+                {moveLog.map((move, index) => (
+                  <li key={index}>{move}</li>
+                ))}
+              </ol>
+            </div>
           </div>
         </>
       )}

@@ -81,13 +81,47 @@ function RenderChessboard() {
   };
 
   return (
-    <div className="p-5 m-10">
-      <Chessboard
-        id="defaultBoard"
-        position={game.fen()}
-        onPieceDrop={onDrop}
-        boardOrientation={color} // Rotate board based on assigned color
-      />
+    <div className="flex flex-col items-center justify-center mt-10">
+      {!roomId ? (
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-4">
+            Looking for opponent...
+          </h2>
+          <div className="flex items-center justify-center gap-2">
+            <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-r-transparent rounded-full"></span>
+            <span className="text-sm text-gray-500">
+              Waiting for an opponent…
+            </span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h2 className="text-lg font-medium mb-4">
+            You are playing as{" "}
+            <span
+              className={
+                color === "white"
+                  ? "text-white bg-black px-2 py-1 rounded"
+                  : "text-black bg-white px-2 py-1 rounded"
+              }
+            >
+              {color.charAt(0).toUpperCase() + color.slice(1)}
+            </span>
+          </h2>
+
+          <div
+            style={{ width: "56%", height: "57%", margin: "auto" }}
+            className="border rounded shadow-lg"
+          >
+            <Chessboard
+              id="defaultBoard"
+              position={game.fen()}
+              onPieceDrop={onDrop}
+              boardOrientation={color}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
